@@ -10,7 +10,8 @@ Data::Math - arithmetic operations on complex data structures
 
    use Data::Math;
    my $db = Data::Math->new();
-   # adding structures
+
+   # add values in two parallel structures
    my $data_sum = $dm->calc( '+', $data_structure_1, $data_structure_2 );
 
 
@@ -51,7 +52,7 @@ strings are just passed through if both sides are the same,
 or concatenated (with '|' separator) if they differ.
 
 If there's a numeric field you don't want to do numeric
-operations on (e.g. 'vat_tax') you can define a pattern
+operations on (e.g. 'tax_rate') you can define a pattern
 in the object's skip_key_patterns array to skip it.
 
 =head2 METHODS
@@ -115,10 +116,6 @@ use lib "/home/doom/End/Cave/DataMath/Wall/Data-Math/lib"; # DEBUG
 
 use Scalar::Classify qw( classify classify_pair );
 
-# ### TODO actually, probably drop this "actions" idea.
-# has actions =>
-#     (is => 'rw',  isa => ArrayRef, default => sub{ [] }, lazy => 1);
-
 has string_policy =>
     (is => 'rw',  isa => Str, default => 'concat_if_differ' );
 
@@ -132,27 +129,19 @@ has skip_key_patterns =>
 has skip_policy =>
     (is => 'rw',  isa => Str, default => 'pick_one' );
 
-# # EXPERIMENTAL
-# # on by default, can set to 0 to reduce memory use
-# has preserve_source =>
-#     (is => 'rw',  isa => Int, default => 1 );
-
-
 our $VERSION = '0.01';
 my $DEBUG = 0;  # TODO change to 0 before shipping
 
 =item calc
 
-Simple wrapper method around do_calc, expects an
-arithmetic operator given as a quoted string as the
-first argument:
+Takes an arithmetic operator given as a quoted string as the
+first argument and applies it to the following references to data
+structures.
 
 Allowed operators: '+', '-', '*', '/' and '%'
 
 =cut
 
-
-# Experimental version intended to handle multivalued case
 sub calc {
   my $self = shift;
   my $op   = shift;
@@ -162,12 +151,11 @@ sub calc {
   while( @_ ) {
     $ds2 = shift;
 
-    # just a hack?   for perl: undef + undef = 0
+    # hack to cover two undefs. For perl: undef + undef = 0
     if ( not ( defined( $ds1 ) ) && not ( defined( $ds2 ) ) ) {
       $ds1 = 0;
       $ds2 = 0;
     }
-
     $new = classify_pair( $ds1, $ds2, { mismatch_policy => 'error' } );
 
     my $ref = \( $new );
@@ -175,23 +163,20 @@ sub calc {
 
     $ds1 = $new;
   }
-
   return $new;
 }
-
-
 
 =item do_calc
 
 do_calc does recursive descent of two roughly parallel perl
 structures, performing the indicated operation on each,
-storing the result in a newly created parallel structure.
+storing the result in a newly created parallel structure
+(a reference passed in as the third argument).
 
 Typically, the indicated operation is a simple numeric operator,
 defaulting to '+'.  The operator may be supplied as the 'op' option:
 
-  my $result_structure =
-    $self->do_calc( $structure1, $structure2, { op => '-' };
+    $self->do_calc( $structure1, $structure2, $result_structure, { op => '-' };
 
 =cut
 
@@ -234,13 +219,9 @@ sub do_calc {
     ${ $ref } = $new;
 
     if ($refcode eq 'HASH') {
-# TODO MEMSAVE (maybe)
-#      my ($qh1, $qh2) = $self->qualify_hash_memsave( $ds1, $ds2 );
       my ($keys, $qh1, $qh2) = $self->qualify_hash( $ds1, $ds2 );
 
     KEY:
-# TODO MEMSAVE
-#      foreach my $k ( keys %{ $qh1 } ) {
       foreach my $k ( @{ $keys } ) {
         my $v1 = $qh1->{ $k };
         my $v2 = $qh2->{ $k };
@@ -251,10 +232,7 @@ sub do_calc {
 
             unless( $skip_policy eq 'remove_key' ) { # TODO implement other policies
 
-              # default behavior is just use first value
-              # ${ $ref }->{ $k } = $v1;
-
-             # almost same thing (passes all existing tests)
+             # actually, the default usually works out to just use first value
               ${ $ref }->{ $k } =
                 $self->string_handler( $v1, $v2, $skip_policy );
 
@@ -293,58 +271,6 @@ sub do_calc {
   }
 }
 
-
-
-=item qualify_array
-
-Given two array references, returns the maximum index limit
-and two "qualified" versions of the arrays, where undef
-values are replaced with default values based on the type
-of what's in the parallel location in the other hash.
-
-Note: qualify_array *modifies* the original arrays in place
-(despite the fact that we also return references to them).
-
-Example usage:
-
-   my ( $limit, $aref1, $aref2 ) = $self->qualify_array( $aref1, $aref2 );
-
-=cut
-
-# TODO
-#      "preserve_source" option to leave initial arrays
-#      untouched by default, but can be flipped off to allow
-#      munging them to preserve memory
-
-#   my ($limit, $vals1, $vals2) = $self->qualify_array( $aref1, $aref2 );
-
-sub qualify_array {
-  my $self = shift;
-  my $a1   = shift || [];
-  my $a2   = shift || [];
-
-  my $policy_opt = { mismatch_policy => 'error'};
-
-  # my $preserve_source = $self->preserve_source; # EXPERIMENTAL
-
-  my $lim1 = $#{ $a1 };
-  my $lim2 = $#{ $a2 };
-
-  my $limit = max( $lim1, $lim2 );
-
-   # Make copies (burning memory to avoid touching originals)
-   my @new1 = @{ $a1 };
-   my @new2 = @{ $a2 };
-
-  # replace undefs on one side with default depending on other side:
-  #    e.g.  0  ''  []  {}
-  foreach my $i (  0 .. $limit ) {
-    classify_pair( $new1[ $i ], $new2[ $i ], { also_qualify => 1 } );
-  }
-  return ( $limit, \@new1, \@new2 );
-}
-
-
 =item qualify_hash
 
 Given two hash references, returns a joint list of keys,
@@ -378,54 +304,41 @@ sub qualify_hash {
   return (\@keys, \%new1, \%new2 );
 }
 
+=item qualify_array
 
-=item qualify_hash_memsave
-
-Given two hash references, returns two "qualified" versions of
-the hashes where undef values are replaced with default values
-based on the type of what's in the parallel location in the other
-hash.
+Given two array references, returns the maximum index limit
+and two "qualified" versions of the arrays, where undef
+values are replaced with default values based on the type
+of what's in the parallel location in the other hash.
 
 Example usage:
 
-  my ($qh1, $qh2) = $self->qualify_hash_memsave( $ds1, $ds2 );
-
-Unlike qualify_hash, this does not create a unified list of keys.
-That can be obtained from *either* hash though:
-
-  my @keys =  keys %{ $qh1 };
+   my ( $limit, $aref1, $aref2 ) = $self->qualify_array( $aref1, $aref2 );
 
 =cut
 
-# TODO wouldn't a *real* memsave version do a qualify-in-place?
-sub qualify_hash_memsave {
+sub qualify_array {
   my $self = shift;
-  my $h1   = shift;
-  my $h2   = shift;
+  my $a1   = shift || [];
+  my $a2   = shift || [];
 
-  no warnings 'uninitialized';  ### TODO
+  my $policy_opt = { mismatch_policy => 'error'};
 
-  my ( %new1, %new2 );
-  foreach my $key ( keys %{ $h1 } ) {
+  my $lim1 = $#{ $a1 };
+  my $lim2 = $#{ $a2 };
 
-    $new1{ $key } = $h1->{ $key };
-    $new2{ $key } = $h2->{ $key };
+  my $limit = max( $lim1, $lim2 );
 
-    classify_pair( $new1{ $key }, $new2{ $key }, { also_qualify => 0 } );
+   # Make copies (burning memory to avoid touching originals)
+   my @new1 = @{ $a1 };
+   my @new2 = @{ $a2 };
+
+  # replace undefs on one side with default depending on other side:
+  #    e.g.  0  ''  []  {}
+  foreach my $i (  0 .. $limit ) {
+    classify_pair( $new1[ $i ], $new2[ $i ], { also_qualify => 1 } );
   }
-
- KEY:
-  foreach my $key ( keys %{ $h2 } ) {
-    # skip this key if we've done it already
-    next KEY if exists $h2->{ $key };
-
-    $new1{ $key } = $h1->{ $key };
-    $new2{ $key } = $h2->{ $key };
-
-    classify_pair( $new1{ $key }, $new2{ $key }, { also_qualify => 0 } );
-  }
-
-  return ( \%new1, \%new2 );
+  return ( $limit, \@new1, \@new2 );
 }
 
 
@@ -467,8 +380,6 @@ sub numeric_handler {
   }
   return $result;
 }
-
-
 
 =item string_handler
 
@@ -564,50 +475,24 @@ __PACKAGE__->meta->make_immutable();
 
 =head1 TODO
 
-  o  re-examine pattern/action callbacks
+  o  examine possibility of pattern/action callbacks
 
-  o  operator overloaded interface
+  o  look into 'preserve_source' options and such to
+     improve memory efficiency
 
-=head1 HISTORY
-
-I wrote a very simple module to do something like this at work:
-It was a recursive implementation that only covered features I
-needed immediately for what I was doing then.
-
-My second attempt at it used a totally different queue
-architecture, and it's since been renamed Data::Math::Queue
-(it may someday be completed and released, or it may not).
-It was an attempt at optimization that I concluded was definitely
-premature-- it's too hard to work on the design in that form.
-I may come back to it some day, particularly if the recursive
-version seems to have performance limitations.
-
-Actually, the usual efficiency argument against recursion
-probably doesn't apply in this case,  because actual perl data
-structures are likely to be more wide than deep.  Depth first
-recursion will bottom out quickly, and is unlikely to overwork
-the stack.
-
-After giving up on the queue implementation (for now), I returned
-to a recursive approach.  I no longer remember what the first version
-of this code looked like, so this might as well be a "clean room"
-rewrite.
-
-There are a number of features I worked on and then abandoned
-(for now):
-
-  o  in addition to handling the standard numeric operations,
-     I was thinking about adding a "pattern/action" language so
-     that in principle you could use this as a general
-     recursion engine to do anything.  It seems unlikely to me
-     that this feature would be very popular, so it's on hold.
-
-  o  ...
+  o  try an operator overloaded interface
 
 =head1 AUTHOR
 
-Joseph Brenner, E<lt>jbrenner@ffn.comE<gt>,
-11 Sep 2014
+Joseph Brenner, E<lt>doom@kzsu.stanford.eduE<gt>
 
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2016 by Joseph Brenner
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+See http://dev.perl.org/licenses/ for more information.
 
 =cut
