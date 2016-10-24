@@ -112,8 +112,6 @@ use List::MoreUtils qw( uniq any );
 use Scalar::Util qw( reftype looks_like_number );
 use List::Util qw( max );
 
-use lib "/home/doom/End/Cave/DataMath/Wall/Data-Math/lib"; # DEBUG
-
 use Scalar::Classify qw( classify classify_pair );
 
 has string_policy =>
@@ -394,14 +392,12 @@ Other allowed values of "string_policy" are:
    "pick_one"   if there are two different values, use the first one.
    "pick_2nd"   if there are two different values, use the second.
 
-
 Example usage:
 
     my $result = $self->string_handler( $ds1, $ds2 );
 
     # override object level string_policy
     my $result = $self->string_handler( $ds1, $ds2, 'pick_one' );
-
 
 =cut
 
