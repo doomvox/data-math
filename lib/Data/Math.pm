@@ -471,12 +471,13 @@ __PACKAGE__->meta->make_immutable();
 
 =head1 TODO
 
-  o  examine possibility of pattern/action callbacks
-
   o  look into 'preserve_source' options and such to
      improve memory efficiency
 
-  o  try an operator overloaded interface
+  o  try an operator overload interface
+
+  o  examine possibility of arbitrary user-defineable
+     operations (pattern/action callbacks?)
 
 =head1 AUTHOR
 
