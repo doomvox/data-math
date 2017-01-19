@@ -128,7 +128,7 @@ has skip_policy =>
     (is => 'rw',  isa => Str, default => 'pick_one' );
 
 our $VERSION = '0.01';
-my $DEBUG = 0;  # TODO change to 0 before shipping
+my $DEBUG = 0; # unused, at present
 
 =item calc
 
@@ -228,7 +228,7 @@ sub do_calc {
         foreach my $rule ( @{ $skip_key_patterns } ) {
           if( $k =~ /$rule/ ) {
 
-            unless( $skip_policy eq 'remove_key' ) { # TODO implement other policies
+            unless( $skip_policy eq 'remove_key' ) { # TODO other policies?
 
              # actually, the default usually works out to just use first value
               ${ $ref }->{ $k } =
@@ -287,7 +287,7 @@ sub qualify_hash {
   my $h1   = shift;
   my $h2   = shift;
 
-  no warnings 'uninitialized';  # TODO
+  #  no warnings 'uninitialized';  # TODO not needed, right?
 
   my @keys = uniq ( keys %{ $h1 }, keys %{ $h2 } );
 

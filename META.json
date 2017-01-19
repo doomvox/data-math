@@ -1,7 +1,7 @@
 {
-   "abstract" : "Blah blah blah",
+   "abstract" : "arithmetic operations on complex data structures",
    "author" : [
-      "Joseph Brenner <doom@kzsu.stanford.edu>"
+      "Joseph Brenner, <doom@kzsu.stanford.edu>"
    ],
    "dynamic_config" : 0,
    "generated_by" : "Dist::Milla version v1.0.16, Dist::Zilla version 6.008, CPAN::Meta::Converter version 2.143240",
@@ -37,17 +37,56 @@
       },
       "runtime" : {
          "requires" : {
-            "perl" : "5.008005"
+            "Carp" : "0",
+            "Data::Dumper" : "0",
+            "FindBin" : "0",
+            "List::MoreUtils" : "0",
+            "List::Util" : "0",
+            "Moo" : "0",
+            "MooX::Types::MooseLike::Base" : "0",
+            "Scalar::Classify" : "0",
+            "Scalar::Util" : "0",
+            "lib" : "0",
+            "perl" : "5.008005",
+            "strict" : "0",
+            "warnings" : "0"
          }
       },
       "test" : {
          "requires" : {
-            "Test::More" : "0.96"
+            "Cwd" : "0",
+            "Data::Dumper" : "0",
+            "Env" : "0",
+            "Fatal" : "0",
+            "File::Basename" : "0",
+            "File::Copy" : "0",
+            "File::Path" : "0",
+            "FindBin" : "0",
+            "List::MoreUtils" : "0",
+            "Test::Deep" : "0",
+            "Test::Exception" : "0",
+            "Test::More" : "0.96",
+            "Test::Trap" : "0",
+            "lib" : "0"
          }
       }
    },
    "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/doomvox/data-math/issues"
+      },
+      "homepage" : "https://github.com/doomvox/data-math",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/doomvox/data-math.git",
+         "web" : "https://github.com/doomvox/data-math"
+      }
+   },
    "version" : "0.01",
+   "x_contributors" : [
+      "Joseph Brenner <doomvox@gmail.com>"
+   ],
    "x_serialization_backend" : "JSON::XS version 2.34"
 }
 
